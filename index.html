@@ -2,15 +2,297 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五子棋 - 课程作业</title>
-    <link rel="stylesheet" href="style.css">
+    <title>面向对象棋类对战</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial; }
+        body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #f8f8f8; }
+        #home { display: flex; flex-direction: column; align-items: center; gap: 40px; }
+        .title { font-size: 42px; }
+        .game-btn { padding: 18px 36px; font-size: 22px; border: none; border-radius: 10px; background: #1677ff; color: white; cursor: pointer; }
+        #game-container { display: none; flex-direction: column; align-items: center; gap: 15px; }
+        #back-btn { position: absolute; top: 20px; left: 20px; padding: 8px 14px; background: #1677ff; color: white; border: none; cursor: pointer; }
+        .chessboard { background: #f0d9b5; border: 3px solid #333; display: grid; }
+        .cell { border: 1px solid #333; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .black { width: 80%; height: 80%; border-radius: 50%; background: #000; }
+        .white { width: 80%; height: 80%; border-radius: 50%; background: #fff; border: 1px solid #000; }
+        #status { font-size: 18px; font-weight: bold; text-align: center; }
+        .btn-row { display: flex; gap: 12px; }
+        #restart, #pass, #resign { padding: 10px 22px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        #restart { background: #1677ff; }
+        #pass { background: #faad14; display: none; }
+        #resign { background: #ff4d4f; }
+    </style>
 </head>
 <body>
-    <h1>五子棋小游戏</h1>
+
+<div id="home">
+    <h1 class="title">面向对象棋类对战</h1>
+    <button class="game-btn" id="gobangBtn">五子棋 15×15</button>
+    <button class="game-btn" id="goBtn">围棋 9×9</button>
+</div>
+
+<div id="game-container">
+    <button id="back-btn">← 返回首页</button>
+    <h2 id="game-title"></h2>
     <div class="chessboard" id="chessboard"></div>
-    <p id="status">黑方先行</p>
-    <button id="restart">重新开始</button>
-    <script src="script.js"></script>
+    <p id="status"></p>
+    <div class="btn-row">
+        <button id="restart">重新开始</button>
+        <button id="pass">虚着</button>
+        <button id="resign">认输</button>
+    </div>
+</div>
+
+<script>
+// ==============================================
+// 【基类：抽象棋盘】 体现：封装、继承、多态
+// ==============================================
+class Board {
+    constructor(size) {
+        this.size = size;
+        this.board = [];
+        this.current = "black";
+        this.over = false;
+    }
+
+    initBoard() {
+        this.board = Array(this.size).fill().map(() => Array(this.size).fill(null));
+        this.current = "black";
+        this.over = false;
+    }
+
+    // 由子类实现 → 多态
+    render() {}
+    place(x, y) {}
+    resign() {}
+}
+
+// ==============================================
+// 【五子棋】继承 Board
+// ==============================================
+class Gobang extends Board {
+    constructor() {
+        super(15);
+    }
+
+    render() {
+        const cb = document.getElementById("chessboard");
+        cb.style.width = "600px";
+        cb.style.height = "600px";
+        cb.style.gridTemplateColumns = `repeat(15,1fr)`;
+        cb.innerHTML = "";
+        for (let i=0; i<15; i++) {
+            for (let j=0; j<15; j++) {
+                const c = document.createElement("div");
+                c.className = "cell";
+                c.onclick = () => this.place(i,j);
+                cb.appendChild(c);
+            }
+        }
+    }
+
+    place(i,j) {
+        if (this.over || this.board[i][j]) return;
+        this.board[i][j] = this.current;
+        const cells = document.querySelectorAll(".cell");
+        const p = document.createElement("div");
+        p.className = this.current;
+        cells[i*15+j].appendChild(p);
+
+        if (this.checkWin(i,j)) {
+            document.getElementById("status").textContent = `${this.current==="black"?"黑方":"白方"}获胜！`;
+            this.over = true;
+            return;
+        }
+
+        this.current = this.current==="black" ? "white" : "black";
+        document.getElementById("status").textContent = this.current==="black"?"黑方回合":"白方回合";
+    }
+
+    checkWin(x,y) {
+        const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+        for (const [dx,dy] of dirs) {
+            let cnt = 1;
+            for (let i=1; i<5; i++) {
+                const nx = x+dx*i, ny = y+dy*i;
+                if (nx>=0&&nx<15&&ny>=0&&ny<15&&this.board[nx][ny]===this.current) cnt++;
+                else break;
+            }
+            for (let i=1; i<5; i++) {
+                const nx = x-dx*i, ny = y-dy*i;
+                if (nx>=0&&nx<15&&ny>=0&&ny<15&&this.board[nx][ny]===this.current) cnt++;
+                else break;
+            }
+            if (cnt>=5) return true;
+        }
+        return false;
+    }
+
+    resign() {
+        this.over = true;
+        document.getElementById("status").textContent = `${this.current==="black"?"黑方":"白方"}认输，对方获胜！`;
+    }
+}
+
+// ==============================================
+// 【围棋】继承 Board
+// ==============================================
+class Go extends Board {
+    constructor() {
+        super(9);
+        this.passCnt = 0;
+    }
+
+    render() {
+        const cb = document.getElementById("chessboard");
+        cb.style.width = "360px";
+        cb.style.height = "360px";
+        cb.style.gridTemplateColumns = `repeat(9,1fr)`;
+        cb.innerHTML = "";
+        for (let i=0; i<9; i++) {
+            for (let j=0; j<9; j++) {
+                const c = document.createElement("div");
+                c.className = "cell";
+                c.onclick = () => this.place(i,j);
+                cb.appendChild(c);
+            }
+        }
+    }
+
+    place(i,j) {
+        if (this.over || this.board[i][j]) return;
+        const op = this.current === "black" ? "white" : "black";
+        this.board[i][j] = this.current;
+
+        // 提子逻辑
+        for (let x=0; x<9; x++) {
+            for (let y=0; y<9; y++) {
+                if (this.board[x][y] === op) {
+                    const g = this.getGroup(x,y,op,{});
+                    if (this.getLiberty(g) === 0) {
+                        this.removeGroup(g);
+                    }
+                }
+            }
+        }
+
+        // 禁自杀
+        const g = this.getGroup(i,j,this.current,{});
+        if (this.getLiberty(g) === 0) {
+            this.board[i][j] = null;
+            document.getElementById("status").textContent = "禁止自杀";
+            return;
+        }
+
+        this.redraw();
+        this.passCnt = 0;
+        this.current = op;
+        document.getElementById("status").textContent = this.current==="black"?"黑方回合":"白方回合";
+    }
+
+    getGroup(x,y,col,vis) {
+        const q = [[x,y]];
+        const g = [];
+        vis[`${x},${y}`] = true;
+        while (q.length) {
+            const [i,j] = q.shift();
+            g.push([i,j]);
+            for (const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+                const ni = i+dx, nj = j+dy;
+                if (ni>=0&&ni<9&&nj>=0&&nj<9&&!vis[`${ni},${nj}`]&&this.board[ni][nj]===col) {
+                    vis[`${ni},${nj}`] = true;
+                    q.push([ni,nj]);
+                }
+            }
+        }
+        return g;
+    }
+
+    getLiberty(g) {
+        const s = new Set();
+        for (const [i,j] of g) {
+            for (const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+                const ni = i+dx, nj = j+dy;
+                if (ni>=0&&ni<9&&nj>=0&&nj<9&&!this.board[ni][nj]) s.add(`${ni},${nj}`);
+            }
+        }
+        return s.size;
+    }
+
+    removeGroup(g) {
+        for (const [i,j] of g) this.board[i][j] = null;
+    }
+
+    redraw() {
+        const cells = document.querySelectorAll(".cell");
+        for (let i=0; i<9; i++) {
+            for (let j=0; j<9; j++) {
+                cells[i*9+j].innerHTML = "";
+                if (this.board[i][j]) {
+                    const p = document.createElement("div");
+                    p.className = this.board[i][j];
+                    cells[i*9+j].appendChild(p);
+                }
+            }
+        }
+    }
+
+    pass() {
+        this.passCnt++;
+        this.current = this.current==="black"?"white":"black";
+        if (this.passCnt >= 2) {
+            this.over = true;
+            this.countScore();
+        }
+    }
+
+    countScore() {
+        let b=0,w=0;
+        for (let i=0; i<9; i++) {
+            for (let j=0; j<9; j++) {
+                if (this.board[i][j]==="black") b++;
+                if (this.board[i][j]==="white") w++;
+            }
+        }
+        document.getElementById("status").innerHTML = `终局<br>黑：${b} 子 白：${w} 子<br>${b>w?"黑胜":b<w?"白胜":"平局"}`;
+    }
+
+    resign() {
+        this.over = true;
+        document.getElementById("status").textContent = `${this.current==="black"?"黑方":"白方"}认输，对方获胜！`;
+    }
+}
+
+// ==============================================
+// 游戏控制
+// ==============================================
+let game;
+
+document.getElementById("gobangBtn").onclick = () => {
+    document.getElementById("home").style.display = "none";
+    document.getElementById("game-container").style.display = "flex";
+    document.getElementById("pass").style.display = "none";
+    game = new Gobang();
+    game.initBoard();
+    game.render();
+};
+
+document.getElementById("goBtn").onclick = () => {
+    document.getElementById("home").style.display = "none";
+    document.getElementById("game-container").style.display = "flex";
+    document.getElementById("pass").style.display = "inline-block";
+    game = new Go();
+    game.initBoard();
+    game.render();
+};
+
+document.getElementById("resign").onclick = () => game.resign();
+document.getElementById("pass").onclick = () => game.pass ? game.pass() : 0;
+document.getElementById("restart").onclick = () => { game.initBoard(); game.render(); };
+document.getElementById("back-btn").onclick = () => {
+    document.getElementById("game-container").style.display = "none";
+    document.getElementById("home").style.display = "flex";
+};
+</script>
 </body>
 </html>
