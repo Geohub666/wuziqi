@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>复古棋类对战平台</title>
+    <title>棋类对战平台</title>
     <style>
         *{
             margin:0;
@@ -194,7 +194,6 @@
     </style>
 </head>
 <body>
-
 <!-- 淡紫色主界面 -->
 <div class="main-page" id="mainPage">
     <h1 class="main-title">棋类对战平台</h1>
@@ -238,14 +237,284 @@
 </div>
 
 <script>
-    // 全局配置
-    const MIN_SIZE = 8, MAX_SIZE = 19;
-    let selectSize = 8;
-    let gobangGame, goGame;
+    // ================= 设计模式：单例模式（UI管理器） =================
+    // 负责UI交互、棋盘大小选择、页面切换，与游戏逻辑解耦
+    class UIManager {
+        static instance = null;
+        static getInstance() {
+            if (!UIManager.instance) {
+                UIManager.instance = new UIManager();
+            }
+            return UIManager.instance;
+        }
 
-    // -------------- 备忘录模式 --------------
-    class Memento{
-        constructor(board,curPlayer,isOver,size){
+        constructor() {
+            this.MIN_SIZE = 8;
+            this.MAX_SIZE = 19;
+            this.selectedSize = 8; // 默认选中8路棋盘
+            this.currentGameType = null; // 当前游戏类型
+            this.cellPool = new Map(); // 设计模式：享元模式 - 单元格DOM池
+
+            // 初始化DOM引用
+            this.dom = {
+                mainPage: document.getElementById('mainPage'),
+                gobangPage: document.getElementById('gobangPage'),
+                goPage: document.getElementById('goPage'),
+                sizeBtns: document.getElementById('sizeBtns'),
+                toGobangBtn: document.getElementById('toGobang'),
+                toGoBtn: document.getElementById('toGo'),
+                back1Btn: document.getElementById('back1'),
+                back2Btn: document.getElementById('back2'),
+                // 五子棋控制按钮
+                restart1Btn: document.getElementById('restart1'),
+                undo1Btn: document.getElementById('undo1'),
+                resign1Btn: document.getElementById('resign1'),
+                save1Btn: document.getElementById('save1'),
+                load1Btn: document.getElementById('load1'),
+                // 围棋控制按钮
+                restart2Btn: document.getElementById('restart2'),
+                undo2Btn: document.getElementById('undo2'),
+                pass2Btn: document.getElementById('pass2'),
+                resign2Btn: document.getElementById('resign2'),
+                save2Btn: document.getElementById('save2'),
+                load2Btn: document.getElementById('load2'),
+                // 棋盘容器
+                gobangBoard: document.getElementById('gobangBoard'),
+                goBoard: document.getElementById('goBoard')
+            };
+
+            // 初始化游戏逻辑管理器
+            this.gameCore = GameCoreManager.getInstance();
+            // 渲染棋盘大小选择按钮
+            this.renderSizeButtons();
+            // 绑定UI事件
+            this.bindEvents();
+        }
+
+        // ================= 设计模式：享元模式（复用单元格DOM） =================
+        getCell(r, c) {
+            const key = `${r}-${c}-${this.currentGameType}`;
+            if (this.cellPool.has(key)) {
+                const cell = this.cellPool.get(key);
+                cell.innerHTML = '';
+                return cell;
+            }
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+            this.cellPool.set(key, cell);
+            return cell;
+        }
+
+        // 渲染棋盘大小选择按钮
+        renderSizeButtons() {
+            this.dom.sizeBtns.innerHTML = '';
+            for (let i = this.MIN_SIZE; i <= this.MAX_SIZE; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                if (i === this.selectedSize) btn.classList.add('active');
+                btn.onclick = () => {
+                    document.querySelectorAll('.size-btns button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.selectedSize = i;
+                };
+                this.dom.sizeBtns.appendChild(btn);
+            }
+        }
+
+        // 渲染棋盘（UI层渲染，调用享元池）
+        renderBoard(boardEl, game) {
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `repeat(${game.size}, 34px)`;
+
+            for (let r = 0; r < game.size; r++) {
+                for (let c = 0; c < game.size; c++) {
+                    const cell = this.getCell(r, c);
+                    // 绑定落子事件（委托给游戏核心）
+                    cell.onclick = () => {
+                        const result = game.place(r, c);
+                        if (result?.success) {
+                            this.renderBoard(boardEl, game);
+                            // 延迟弹窗，保证UI渲染完成
+                            setTimeout(() => {
+                                if (result.win) alert(`${result.winner === 'black' ? '黑方' : '白方'}获胜！`);
+                                if (result.tie) alert('平局！');
+                            }, 50);
+                        }
+                    };
+                    // 渲染棋子
+                    if (game.board[r][c]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${game.board[r][c]}`;
+                        cell.appendChild(piece);
+                    }
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // 绑定所有UI事件
+        bindEvents() {
+            // 跳转到五子棋页面
+            this.dom.toGobangBtn.onclick = () => {
+                this.currentGameType = 'gobang';
+                const game = this.gameCore.createGame('gobang', this.selectedSize);
+                this.dom.mainPage.classList.add('hide');
+                this.dom.gobangPage.classList.add('show');
+                this.renderBoard(this.dom.gobangBoard, game);
+                // 缓存当前游戏实例，供控制按钮使用
+                this.gameCore.setCurrentGame(game, 'gobang');
+            };
+
+            // 跳转到围棋页面
+            this.dom.toGoBtn.onclick = () => {
+                this.currentGameType = 'go';
+                const game = this.gameCore.createGame('go', this.selectedSize);
+                this.dom.mainPage.classList.add('hide');
+                this.dom.goPage.classList.add('show');
+                this.renderBoard(this.dom.goBoard, game);
+                this.gameCore.setCurrentGame(game, 'go');
+            };
+
+            // 返回主页
+            this.dom.back1Btn.onclick = () => {
+                this.dom.mainPage.classList.remove('hide');
+                this.dom.gobangPage.classList.remove('show');
+            };
+            this.dom.back2Btn.onclick = () => {
+                this.dom.mainPage.classList.remove('hide');
+                this.dom.goPage.classList.remove('show');
+            };
+
+            // 五子棋控制事件
+            this.dom.restart1Btn.onclick = () => {
+                const game = this.gameCore.createGame('gobang', this.selectedSize);
+                this.gameCore.setCurrentGame(game, 'gobang');
+                this.renderBoard(this.dom.gobangBoard, game);
+            };
+            this.dom.undo1Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('gobang');
+                if (game?.undo()) this.renderBoard(this.dom.gobangBoard, game);
+            };
+            this.dom.resign1Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('gobang');
+                if (game) {
+                    alert(`${game.curPlayer === 'black' ? '黑方' : '白方'}认输！`);
+                    game.isOver = true;
+                }
+            };
+            this.dom.save1Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('gobang');
+                if (game) {
+                    localStorage.setItem('gobang_save', JSON.stringify(game));
+                    alert('五子棋局面保存成功！');
+                }
+            };
+            this.dom.load1Btn.onclick = () => {
+                const data = localStorage.getItem('gobang_save');
+                if (!data) {
+                    alert('无五子棋保存记录！');
+                    return;
+                }
+                const gameData = JSON.parse(data);
+                const game = this.gameCore.createGame('gobang', gameData.size);
+                Object.assign(game, gameData);
+                this.gameCore.setCurrentGame(game, 'gobang');
+                this.renderBoard(this.dom.gobangBoard, game);
+                alert('五子棋局面读取成功！');
+            };
+
+            // 围棋控制事件
+            this.dom.restart2Btn.onclick = () => {
+                const game = this.gameCore.createGame('go', this.selectedSize);
+                this.gameCore.setCurrentGame(game, 'go');
+                this.renderBoard(this.dom.goBoard, game);
+            };
+            this.dom.undo2Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('go');
+                if (game?.undo()) this.renderBoard(this.dom.goBoard, game);
+            };
+            this.dom.pass2Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('go');
+                if (game) {
+                    game.pass();
+                    this.renderBoard(this.dom.goBoard, game);
+                }
+            };
+            this.dom.resign2Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('go');
+                if (game) {
+                    alert(`${game.curPlayer === 'black' ? '黑方' : '白方'}认输！`);
+                    game.isOver = true;
+                }
+            };
+            this.dom.save2Btn.onclick = () => {
+                const game = this.gameCore.getCurrentGame('go');
+                if (game) {
+                    localStorage.setItem('go_save', JSON.stringify(game));
+                    alert('围棋局面保存成功！');
+                }
+            };
+            this.dom.load2Btn.onclick = () => {
+                const data = localStorage.getItem('go_save');
+                if (!data) {
+                    alert('无围棋保存记录！');
+                    return;
+                }
+                const gameData = JSON.parse(data);
+                const game = this.gameCore.createGame('go', gameData.size);
+                Object.assign(game, gameData);
+                this.gameCore.setCurrentGame(game, 'go');
+                this.renderBoard(this.dom.goBoard, game);
+                alert('围棋局面读取成功！');
+            };
+        }
+    }
+
+    // ================= 设计模式：抽象工厂模式 + 模板方法模式（游戏核心） =================
+    class GameCoreManager {
+        static instance = null;
+        static getInstance() {
+            if (!GameCoreManager.instance) {
+                GameCoreManager.instance = new GameCoreManager();
+            }
+            return GameCoreManager.instance;
+        }
+
+        constructor() {
+            this.gameInstances = { // 缓存当前游戏实例
+                gobang: null,
+                go: null
+            };
+        }
+
+        // 设计模式：抽象工厂 - 创建对应游戏实例
+        createGame(type, size) {
+            switch (type) {
+                case 'gobang':
+                    return new GobangGame(size);
+                case 'go':
+                    return new GoGame(size);
+                default:
+                    throw new Error('不支持的游戏类型');
+            }
+        }
+
+        // 设置当前游戏实例
+        setCurrentGame(game, type) {
+            this.gameInstances[type] = game;
+        }
+
+        // 获取当前游戏实例
+        getCurrentGame(type) {
+            return this.gameInstances[type];
+        }
+    }
+
+    // ================= 设计模式：备忘录模式（游戏状态保存） =================
+    class GameMemento {
+        constructor(board, curPlayer, isOver, size) {
             this.board = JSON.parse(JSON.stringify(board));
             this.curPlayer = curPlayer;
             this.isOver = isOver;
@@ -253,252 +522,202 @@
         }
     }
 
-    // -------------- 抽象游戏基类 --------------
-    class BaseGame{
-        constructor(size){
+    // ================= 设计模式：模板方法模式（游戏基类） =================
+    class BaseGame {
+        constructor(size) {
             this.size = size;
-            this.curPlayer = "black";
-            this.board = Array(size).fill().map(()=>Array(size).fill(null));
+            this.curPlayer = 'black';
+            this.board = Array(size).fill().map(() => Array(size).fill(null));
             this.isOver = false;
-            this.history = [];
+            this.history = []; // 备忘录列表
         }
-        save(){ this.history.push(new Memento(this.board,this.curPlayer,this.isOver,this.size)); }
-        undo(){
-            if(!this.history.length) return false;
-            const m = this.history.pop();
-            this.board = m.board;
-            this.curPlayer = m.curPlayer;
-            this.isOver = m.isOver;
-            this.size = m.size;
+
+        // 模板方法：保存状态
+        save() {
+            this.history.push(new GameMemento(this.board, this.curPlayer, this.isOver, this.size));
+        }
+
+        // 模板方法：悔棋（恢复状态）
+        undo() {
+            if (!this.history.length) return false;
+            const memento = this.history.pop();
+            this.board = memento.board;
+            this.curPlayer = memento.curPlayer;
+            this.isOver = memento.isOver;
+            this.size = memento.size;
             return true;
         }
-        switchP(){ this.curPlayer = this.curPlayer==="black"?"white":"black"; }
-        valid(r,c){ return r>=0&&r<this.size&&c>=0&&c<this.size; }
-        place(r,c){}
-        checkWin(r,c){}
+
+        // 模板方法：切换玩家
+        switchP() {
+            this.curPlayer = this.curPlayer === 'black' ? 'white' : 'black';
+        }
+
+        // 模板方法：校验坐标合法性
+        valid(r, c) {
+            return r >= 0 && r < this.size && c >= 0 && c < this.size;
+        }
+
+        // 抽象方法：落子（子类实现）
+        place(r, c) { throw new Error('子类必须实现place方法'); }
+
+        // 抽象方法：胜负判断（子类实现）
+        checkWin(r, c) { throw new Error('子类必须实现checkWin方法'); }
     }
 
-    // -------------- 五子棋（核心修改：先落子，后弹窗） --------------
-    class Gobang extends BaseGame{
-        place(r,c){
-            if(!this.valid(r,c)||this.board[r][c]||this.isOver) return false;
-            this.save();
-            // 先落子
-            this.board[r][c] = this.curPlayer;
+    // ================= 五子棋子类（实现模板方法） =================
+    class GobangGame extends BaseGame {
+        place(r, c) {
+            if (!this.valid(r, c) || this.board[r][c] || this.isOver) return { success: false };
             
-            // 判断是否胜利/平局
+            this.save(); // 模板方法：保存状态
+            this.board[r][c] = this.curPlayer;
+
             let win = false;
             let tie = false;
-            
-            if(this.checkWin(r,c)){
+            // 胜负判断
+            if (this.checkWin(r, c)) {
                 win = true;
                 this.isOver = true;
-            }else if(this.board.flat().every(e=>e)){
+            }
+            // 平局判断
+            else if (this.board.flat().every(e => e)) {
                 tie = true;
                 this.isOver = true;
             }
 
-            // 切换玩家
-            if(!win && !tie){
-                this.switchP();
-            }
-            
-            // 返回是否需要显示弹窗（胜利/平局）
-            return { success: true, win, tie, winner: this.curPlayer };
+            // 切换玩家（未结束时）
+            if (!win && !tie) this.switchP();
+
+            return {
+                success: true,
+                win,
+                tie,
+                winner: this.curPlayer
+            };
         }
-        checkWin(r,c){
-            const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+
+        checkWin(r, c) {
+            const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
             const col = this.board[r][c];
-            for(let [dx,dy] of dirs){
-                let cnt=1;
-                for(let i=1;i<5;i++){
-                    let nr=r+dx*i, nc=c+dy*i;
-                    if(!this.valid(nr,nc)||this.board[nr][nc]!==col) break;
+            for (let [dx, dy] of dirs) {
+                let cnt = 1;
+                // 正向统计
+                for (let i = 1; i < 5; i++) {
+                    const nr = r + dx * i, nc = c + dy * i;
+                    if (!this.valid(nr, nc) || this.board[nr][nc] !== col) break;
                     cnt++;
                 }
-                for(let i=1;i<5;i++){
-                    let nr=r-dx*i, nc=c-dy*i;
-                    if(!this.valid(nr,nc)||this.board[nr][nc]!==col) break;
+                // 反向统计
+                for (let i = 1; i < 5; i++) {
+                    const nr = r - dx * i, nc = c - dy * i;
+                    if (!this.valid(nr, nc) || this.board[nr][nc] !== col) break;
                     cnt++;
                 }
-                if(cnt>=5) return true;
+                if (cnt >= 5) return true;
             }
             return false;
         }
     }
 
-    // -------------- 围棋 --------------
-    class Go extends BaseGame{
-        constructor(size){
+    // ================= 围棋子类（实现模板方法） =================
+    class GoGame extends BaseGame {
+        constructor(size) {
             super(size);
-            this.passCnt=0;
+            this.passCnt = 0; // 虚着计数
         }
-        getGroup(r,c,vis=new Set()){
+
+        // 辅助方法：获取棋组
+        getGroup(r, c, vis = new Set()) {
             const col = this.board[r][c];
-            const g=[], st=[[r,c]];
-            while(st.length){
-                const [x,y]=st.pop();
-                const k=`${x},${y}`;
-                if(vis.has(k)) continue;
-                vis.add(k); g.push([x,y]);
-                [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dy])=>{
-                    let nx=x+dx, ny=y+dy;
-                    if(this.valid(nx,ny)&&!vis.has(`${nx},${ny}`)&&this.board[nx][ny]===col) st.push([nx,ny]);
+            const g = [], st = [[r, c]];
+            while (st.length) {
+                const [x, y] = st.pop();
+                const k = `${x},${y}`;
+                if (vis.has(k)) continue;
+                vis.add(k);
+                g.push([x, y]);
+                [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
+                    const nx = x + dx, ny = y + dy;
+                    if (this.valid(nx, ny) && !vis.has(`${nx},${ny}`) && this.board[nx][ny] === col) {
+                        st.push([nx, ny]);
+                    }
                 });
             }
             return g;
         }
-        getLib(r,c){
-            const g=this.getGroup(r,c);
-            const s=new Set();
-            g.forEach(([x,y])=>{
-                [[-1,0],[1,0],[0,1]].forEach(([dx,dy])=>{
-                    let nx=x+dx, ny=y+dy;
-                    if(this.valid(nx,ny)&&!this.board[nx][ny]) s.add(`${nx},${ny}`);
+
+        // 辅助方法：计算气数
+        getLib(r, c) {
+            const g = this.getGroup(r, c);
+            const s = new Set();
+            g.forEach(([x, y]) => {
+                [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
+                    const nx = x + dx, ny = y + dy;
+                    if (this.valid(nx, ny) && !this.board[nx][ny]) s.add(`${nx},${ny}`);
                 });
             });
             return s.size;
         }
-        removeDead(){
-            const e = this.curPlayer==="black"?"white":"black";
-            const vis=new Set();
-            for(let i=0;i<this.size;i++){
-                for(let j=0;j<this.size;j++){
-                    if(this.board[i][j]===e&&!vis.has(`${i},${j}`)){
-                        this.getGroup(i,j,vis);
-                        if(this.getLib(i,j)===0){
-                            this.getGroup(i,j).forEach(([x,y])=>this.board[x][y]=null);
+
+        // 辅助方法：移除死子
+        removeDead() {
+            const enemy = this.curPlayer === 'black' ? 'white' : 'black';
+            const vis = new Set();
+            for (let i = 0; i < this.size; i++) {
+                for (let j = 0; j < this.size; j++) {
+                    if (this.board[i][j] === enemy && !vis.has(`${i},${j}`)) {
+                        this.getGroup(i, j, vis);
+                        if (this.getLib(i, j) === 0) {
+                            this.getGroup(i, j).forEach(([x, y]) => this.board[x][y] = null);
                         }
                     }
                 }
             }
         }
-        place(r,c){
-            if(!this.valid(r,c)||this.board[r][c]||this.isOver) return false;
-            this.save();
+
+        // 实现落子逻辑
+        place(r, c) {
+            if (!this.valid(r, c) || this.board[r][c] || this.isOver) return false;
+            
+            this.save(); // 模板方法：保存状态
             this.board[r][c] = this.curPlayer;
-            this.removeDead();
-            if(this.getLib(r,c)===0){
-                this.undo();
-                alert("禁着点！");
+            this.removeDead(); // 移除死子
+
+            // 禁着点判断
+            if (this.getLib(r, c) === 0) {
+                this.undo(); // 模板方法：悔棋
+                alert('禁着点，不能落子！');
                 return false;
             }
-            this.passCnt=0;
-            this.switchP();
-            return true;
+
+            this.passCnt = 0;
+            this.switchP(); // 模板方法：切换玩家
+            return { success: true };
         }
-        pass(){
+
+        // 实现虚着逻辑
+        pass() {
+            if (this.isOver) return;
             this.passCnt++;
-            if(this.passCnt>=2){
-                let b = this.board.flat().filter(e=>e==="black").length;
-                let need = this.size*this.size/2+3.75;
-                alert(b>need?`黑胜${(b-need).toFixed(2)}子`:`白胜${(need-b).toFixed(2)}子`);
-                this.isOver=true;
-            }else{
-                this.switchP();
+            if (this.passCnt >= 2) {
+                const black = this.board.flat().filter(e => e === 'black').length;
+                const total = this.size * this.size;
+                const need = total / 2 + 3.75;
+                alert(black > need ? `黑方胜 ${(black - need).toFixed(2)}子` : `白方胜 ${(need - black).toFixed(2)}子`);
+                this.isOver = true;
+            } else {
+                this.switchP(); // 模板方法：切换玩家
             }
         }
+
+        // 围棋无需checkWin，重写为空
+        checkWin() { return false; }
     }
 
-    // -------------- 渲染大小按钮 --------------
-    function renderSize(){
-        const box = document.getElementById("sizeBtns");
-        box.innerHTML="";
-        for(let i=MIN_SIZE;i<=MAX_SIZE;i++){
-            const b=document.createElement("button");
-            b.textContent=i;
-            if(i===selectSize) b.classList.add("active");
-            b.onclick=()=>{
-                document.querySelectorAll(".size-btns button").forEach(e=>e.classList.remove("active"));
-                b.classList.add("active");
-                selectSize=i;
-            };
-            box.appendChild(b);
-        }
-    }
-
-    // -------------- 渲染棋盘 --------------
-    function renderBoard(eleId,game){
-        const el=document.getElementById(eleId);
-        el.innerHTML="";
-        el.style.gridTemplateColumns=`repeat(${game.size},34px)`;
-        for(let i=0;i<game.size;i++){
-            for(let j=0;j<game.size;j++){
-                const c=document.createElement("div");
-                c.className="cell";
-                c.onclick=()=>{
-                    // 落子
-                    const result = game.place(i,j);
-                    if(result.success){
-                        // 先渲染棋子到界面
-                        renderBoard(eleId,game);
-                        
-                        // 渲染完成后，再弹出提示
-                        setTimeout(()=>{
-                            if(result.win){
-                                alert(`${result.winner==="black"?"黑方":"白方"}获胜！`);
-                            }else if(result.tie){
-                                alert("平局！");
-                            }
-                        }, 50);
-                    }
-                };
-                if(game.board[i][j]){
-                    const p=document.createElement("div");
-                    p.className=`piece ${game.board[i][j]}`;
-                    c.appendChild(p);
-                }
-                el.appendChild(c);
-            }
-        }
-    }
-
-    // -------------- 初始化 --------------
-    window.onload=()=>{
-        renderSize();
-        // 主页跳转
-        document.getElementById("toGobang").onclick=()=>{
-            gobangGame = new Gobang(selectSize);
-            document.getElementById("mainPage").classList.add("hide");
-            document.getElementById("gobangPage").classList.add("show");
-            renderBoard("gobangBoard",gobangGame);
-        };
-        document.getElementById("toGo").onclick=()=>{
-            goGame = new Go(selectSize);
-            document.getElementById("mainPage").classList.add("hide");
-            document.getElementById("goPage").classList.add("show");
-            renderBoard("goBoard",goGame);
-        };
-        // 返回
-        document.getElementById("back1").onclick=()=>{
-            document.getElementById("mainPage").classList.remove("hide");
-            document.getElementById("gobangPage").classList.remove("show");
-        };
-        document.getElementById("back2").onclick=()=>{
-            document.getElementById("mainPage").classList.remove("hide");
-            document.getElementById("goPage").classList.remove("show");
-        };
-
-        // 五子棋控制
-        document.getElementById("restart1").onclick=()=>{gobangGame=new Gobang(selectSize);renderBoard("gobangBoard",gobangGame);};
-        document.getElementById("undo1").onclick=()=>{if(gobangGame.undo())renderBoard("gobangBoard",gobangGame);};
-        document.getElementById("resign1").onclick=()=>{alert(`${gobangGame.curPlayer==="black"?"黑方":"白方"}认输`);gobangGame.isOver=true;};
-        document.getElementById("save1").onclick=()=>{localStorage.setItem("gobang",JSON.stringify(gobangGame));alert("保存成功");};
-        document.getElementById("load1").onclick=()=>{
-            const d=localStorage.getItem("gobang");
-            if(d){gobangGame=Object.assign(new Gobang(selectSize),JSON.parse(d));renderBoard("gobangBoard",gobangGame);alert("读取成功");}
-        };
-
-        // 围棋控制
-        document.getElementById("restart2").onclick=()=>{goGame=new Go(selectSize);renderBoard("goBoard",goGame);};
-        document.getElementById("undo2").onclick=()=>{if(goGame.undo())renderBoard("goBoard",goGame);};
-        document.getElementById("pass2").onclick=()=>{goGame.pass();renderBoard("goBoard",goGame);};
-        document.getElementById("resign2").onclick=()=>{alert(`${goGame.curPlayer==="black"?"黑方":"白方"}认输`);goGame.isOver=true;};
-        document.getElementById("save2").onclick=()=>{localStorage.setItem("go",JSON.stringify(goGame));alert("保存成功");};
-        document.getElementById("load2").onclick=()=>{
-            const d=localStorage.getItem("go");
-            if(d){goGame=Object.assign(new Go(selectSize),JSON.parse(d));renderBoard("goBoard",goGame);alert("读取成功");}
-        };
+    // 初始化UI管理器（单例）
+    window.onload = () => {
+        UIManager.getInstance();
     };
 </script>
 </body>
