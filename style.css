@@ -1,159 +1,190 @@
-/* #################### 你附件原有CSS全部保留 #################### */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Microsoft YaHei", sans-serif;
-}
-body {
-    background-color: #f5f5f5;
-    padding: 20px;
-}
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    text-align: center;
-}
-.game-select {
-    margin: 30px 0;
-}
-.game-select h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 20px;
-}
-.size-select, .type-select {
-    margin: 15px 0;
-}
-.size-select h3, .type-select h3 {
-    font-size: 1.2rem;
-    color: #666;
-    margin-bottom: 10px;
-}
-#size-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin: 10px auto;
-    max-width: 600px;
-}
-#size-buttons button {
-    width: 45px;
-    height: 45px;
-    font-size: 1rem;
-    border: 2px solid #2196F3;
-    border-radius: 6px;
-    background: white;
-    color: #2196F3;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-#size-buttons button.active {
-    background: #2196F3;
-    color: white;
-}
-#size-tip {
-    font-size: 1rem;
-    color: #555;
-    margin-top: 5px;
-}
-.game-select button {
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    margin: 0 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: #2196F3;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.game-select button:hover {
-    background-color: #1976D2;
-}
-.game-controls {
-    margin-bottom: 20px;
-}
-.game-controls h2 {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 10px;
-}
-#status {
-    font-size: 1.3rem;
-    color: #555;
-    margin-bottom: 15px;
-}
-.control-buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-.control-buttons button {
-    padding: 10px 20px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.control-buttons button:hover {
-    background-color: #388E3C;
-}
-.control-buttons #resign {
-    background-color: #F44336;
-}
-.control-buttons #resign:hover {
-    background-color: #D32F2F;
-}
-.chessboard-container {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-}
-.chessboard {
-    display: grid;
-    gap: 1px;
-    background-color: #8B4513;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-.cell {
-    width: 30px;
-    height: 30px;
-    background-color: #DEB887;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.cell:hover {
-    background-color: #F5DEB3;
-}
-.piece {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.piece.black {
-    background-color: #000;
-}
-.piece.white {
-    background-color: #fff;
-    border: 1px solid #333;
+    font-family: "楷体", "微软雅黑", serif;
 }
 
-/* #################### 新增：禁用样式 #################### */
-button:disabled {
-    background-color: #ccc !important;
-    cursor: not-allowed !important;
-    border-color: #ccc !important;
-    color: #999 !important;
+/* 首页 */
+.main-page {
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #e6e6fa, #d8bfd8, thistle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #5a4b94;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 10;
+    padding: 20px;
 }
+
+.main-page.hide { display: none; }
+
+.main-title {
+    font-size: 60px;
+    margin-bottom: 40px;
+    letter-spacing: 8px;
+}
+
+.size-box {
+    margin-bottom: 30px;
+    text-align: center;
+    width: 100%;
+    max-width: 750px;
+}
+
+.size-btns {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    width: 100%;
+}
+
+.size-btns button {
+    width: 100%;
+    aspect-ratio: 1/1;
+    font-size: 32px;
+    border: 3px solid #9370db;
+    background: rgba(147, 112, 219, 0.2);
+    color: #5a4b94;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.size-btns button.active {
+    background: #9370db;
+    color: white;
+    font-weight: bold;
+}
+
+.game-btns {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.game-btn {
+    padding: 20px 50px;
+    font-size: 28px;
+    border-radius: 12px;
+    background: rgba(147, 112, 219, 0.3);
+    color: #5a4b94;
+    border: 2px solid #9370db;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.game-btn:hover {
+    background: #9370db;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* 游戏页面 */
+.game-page {
+    width: 100vw;
+    height: 100vh;
+    background: #d3b88c;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    gap: 12px;
+}
+
+.game-page.show { display: flex; }
+
+.turn-tip {
+    font-size: 24px;
+    color: #3a2411;
+    padding: 8px 20px;
+    background: rgba(255, 248, 220, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.turn-black { color: #000; font-weight: bold; }
+.turn-white {
+    color: #fff;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* 棋盘核心样式 */
+.chess-board {
+    position: relative;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.4), inset 0 0 10px rgba(139, 69, 19, 0.3);
+    border: 4px solid #cd853f;
+    background: #faebd7;
+    background-repeat: no-repeat;
+}
+
+.cross-point {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 1;
+}
+
+.piece {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 2px 3px rgba(255,255,255,0.4);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.piece.black { background: radial-gradient(circle at 35% 35%, #444, #111); }
+.piece.white { 
+    background: radial-gradient(circle at 35% 35%, #fff, #f5f5f5); 
+    border: 1px solid #777;
+}
+
+/* 侧边提示与按钮 */
+.tips-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #8b4513;
+    border-radius: 8px;
+    padding: 15px;
+    max-width: 300px;
+    z-index: 999;
+}
+
+.tips-content.hide { display: none; }
+
+.control-bar {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.ctrl-btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    background: #8b4513;
+    color: white;
+    cursor: pointer;
+    border: 1px solid #5a2e0a;
+}
+
+.ctrl-btn.resign { background: #cd5c5c; }
+.file-ctrl-btn { background: #2e8b57; }
+.file-input { display: none; }
