@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 首页 -->
     <div class="main-page" id="mainPage">
         <h1 class="main-title">棋类对战平台</h1>
         <div class="size-box">
@@ -19,55 +20,52 @@
         </div>
     </div>
 
+    <!-- 五子棋页面 -->
     <div class="game-page" id="gobangPage">
         <button class="back-btn" id="back1">返回主页</button>
         <div class="game-header">五子棋对战</div>
         <div class="turn-tip" id="gobangTurn">当前回合：<span class="turn-black">黑方</span> 落子</div>
+        <div class="undo-count-tip" id="gobangUndoCount">黑方剩余悔棋：3次 | 白方剩余悔棋：3次</div>
         <div class="chess-board" id="gobangBoard"></div>
         <div class="control-bar">
             <button class="ctrl-btn" id="restart1">重新开始</button>
             <button class="ctrl-btn" id="undo1">悔棋一步</button>
             <button class="ctrl-btn resign" id="resign1">投子认负</button>
-            <button class="ctrl-btn file-ctrl-btn" id="saveToFile1">保存到文件</button>
+            <button class="ctrl-btn file-ctrl-btn" id="saveToFile1">保存棋谱</button>
             <input type="file" id="loadFromFileInput1" class="file-input" accept=".json">
-            <button class="ctrl-btn file-ctrl-btn" id="loadFromFile1">从文件读取</button>
+            <button class="ctrl-btn file-ctrl-btn" id="loadFromFile1">读取棋谱</button>
         </div>
     </div>
 
+    <!-- 围棋页面 -->
     <div class="game-page" id="goPage">
         <button class="back-btn" id="back2">返回主页</button>
         <div class="game-header">围棋对战</div>
         <div class="turn-tip" id="goTurn">当前回合：<span class="turn-black">黑方</span> 落子</div>
+        <div class="undo-count-tip" id="goUndoCount">黑方剩余悔棋：3次 | 白方剩余悔棋：3次</div>
         <div class="chess-board" id="goBoard"></div>
         <div class="control-bar">
             <button class="ctrl-btn" id="restart2">重新开始</button>
             <button class="ctrl-btn" id="undo2">悔棋一步</button>
             <button class="ctrl-btn" id="pass2">虚着</button>
             <button class="ctrl-btn resign" id="resign2">投子认负</button>
-            <button class="ctrl-btn file-ctrl-btn" id="saveToFile2">保存到文件</button>
+            <button class="ctrl-btn file-ctrl-btn" id="saveToFile2">保存棋谱</button>
             <input type="file" id="loadFromFileInput2" class="file-input" accept=".json">
-            <button class="ctrl-btn file-ctrl-btn" id="loadFromFile2">从文件读取</button>
+            <button class="ctrl-btn file-ctrl-btn" id="loadFromFile2">读取棋谱</button>
         </div>
     </div>
 
-    <div class="tips-container" id="tipsContainer">
+    <!-- 提示面板 -->
+    <div class="tips-container">
         <div class="tips-header">
             <span class="tips-title">操作提示</span>
             <button class="tips-toggle" id="tipsToggleBtn">隐藏</button>
         </div>
         <div class="tips-content" id="tipsContent">
-            <p>📌 五子棋规则：</p>
-            <p>1. 黑方先行，率先连成5子者获胜</p>
-            <p>2. 棋盘填满无胜者则平局</p>
-            <br>
-            <p>📌 围棋规则：</p>
-            <p>1. 黑方先行，落子后移除无气的敌方棋子</p>
-            <p>2. 禁着点不可落子</p>
-            <p>3. 连续两次虚着则计算胜负</p>
-            <br>
-            <p>📌 通用操作：</p>
-            <p>1. 悔棋：最多限制5次</p>
-            <p>2. 保存/读取：使用 JSON 格式本地存档</p>
+            <p>📌 五子棋规则：黑方先行，连成5子获胜</p>
+            <p>📌 围棋规则：落子提无气棋子，禁自杀/禁着点</p>
+            <p>📌 悔棋：双方各限3次，虚着×2结束游戏</p>
+            <p>📌 支持保存/读取棋谱，本地JSON存储</p>
         </div>
     </div>
 

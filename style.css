@@ -4,8 +4,7 @@
     box-sizing: border-box;
     font-family: "楷体", "微软雅黑", serif;
 }
-
-/* 首页 */
+/* 首页样式（已优化） */
 .main-page {
     width: 100vw;
     height: 100vh;
@@ -13,78 +12,79 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* 顶部对齐，标题更靠上 */
     color: #5a4b94;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    padding: 60px 20px; /* 顶部留白，整体更舒展 */
     position: relative;
     z-index: 10;
-    padding: 20px;
+    gap: 40px; /* 模块间距统一美观 */
 }
-
 .main-page.hide { display: none; }
-
+/* 主标题：更大、更靠上、字间距更宽 */
 .main-title {
-    font-size: 60px;
-    margin-bottom: 40px;
-    letter-spacing: 8px;
+    font-size: 80px; /* 放大字号 */
+    letter-spacing: 12px;
+    margin-top: 40px; /* 精准控制靠上位置 */
 }
-
+/* 选择棋盘大小模块：字体放大、布局紧凑美观 */
 .size-box {
-    margin-bottom: 30px;
     text-align: center;
     width: 100%;
-    max-width: 750px;
+    max-width: 600px; /* 缩小容器，更精致 */
 }
-
+.size-box h3 {
+    font-size: 32px; /* 标题字体放大 */
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+/* 数字按钮容器：间距缩小、更紧凑 */
 .size-btns {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 15px;
+    gap: 10px; /* 按钮间距缩小 */
     width: 100%;
 }
-
+/* 数字按钮：整体缩小、更精致 */
 .size-btns button {
     width: 100%;
     aspect-ratio: 1/1;
-    font-size: 32px;
-    border: 3px solid #9370db;
-    background: rgba(147, 112, 219, 0.2);
+    font-size: 24px; /* 按钮数字缩小 */
+    border: 2px solid #9370db; /* 边框变细更美观 */
+    background: rgba(147,112,219,0.2);
     color: #5a4b94;
-    border-radius: 16px;
+    border-radius: 12px; /* 圆角微调更柔和 */
     cursor: pointer;
     transition: 0.3s;
 }
-
 .size-btns button.active {
     background: #9370db;
     color: white;
     font-weight: bold;
 }
-
+/* 游戏按钮组：间距、布局优化 */
 .game-btns {
     display: flex;
     gap: 30px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
-
 .game-btn {
-    padding: 20px 50px;
-    font-size: 28px;
+    padding: 18px 45px;
+    font-size: 26px;
     border-radius: 12px;
-    background: rgba(147, 112, 219, 0.3);
+    background: rgba(147,112,219,0.3);
     color: #5a4b94;
     border: 2px solid #9370db;
     cursor: pointer;
     transition: 0.3s;
 }
-
 .game-btn:hover {
     background: #9370db;
     color: white;
     transform: scale(1.05);
 }
 
-/* 游戏页面 */
+/* 游戏页面（无修改，保持原样） */
 .game-page {
     width: 100vw;
     height: 100vh;
@@ -95,19 +95,51 @@
     justify-content: center;
     padding: 15px;
     gap: 12px;
+    position: relative;
 }
-
 .game-page.show { display: flex; }
-
+.game-header {
+    font-size: 32px;
+    color: #3a2411;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 12px 24px;
+    font-size: 18px;
+    border-radius: 8px;
+    background: #8b4513;
+    color: white;
+    border: 2px solid #5a2e0a;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 99;
+}
+.back-btn:hover {
+    background: #a0522d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
 .turn-tip {
     font-size: 24px;
     color: #3a2411;
     padding: 8px 20px;
-    background: rgba(255, 248, 220, 0.8);
+    background: rgba(255,248,220,0.8);
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
+.undo-count-tip {
+    font-size: 18px;
+    color: #3a2411;
+    padding: 6px 16px;
+    background: rgba(255,248,220,0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 .turn-black { color: #000; font-weight: bold; }
 .turn-white {
     color: #fff;
@@ -115,16 +147,13 @@
     padding: 2px 6px;
     border-radius: 4px;
 }
-
-/* 棋盘核心样式 */
 .chess-board {
     position: relative;
-    box-shadow: 0 12px 35px rgba(0,0,0,0.4), inset 0 0 10px rgba(139, 69, 19, 0.3);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.4), inset 0 0 10px rgba(139,69,19,0.3);
     border: 4px solid #cd853f;
     background: #faebd7;
     background-repeat: no-repeat;
 }
-
 .cross-point {
     position: absolute;
     width: 34px;
@@ -133,7 +162,6 @@
     cursor: pointer;
     z-index: 1;
 }
-
 .piece {
     width: 30px;
     height: 30px;
@@ -146,28 +174,11 @@
     z-index: 2;
     pointer-events: none;
 }
-
 .piece.black { background: radial-gradient(circle at 35% 35%, #444, #111); }
 .piece.white { 
     background: radial-gradient(circle at 35% 35%, #fff, #f5f5f5); 
     border: 1px solid #777;
 }
-
-/* 侧边提示与按钮 */
-.tips-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 2px solid #8b4513;
-    border-radius: 8px;
-    padding: 15px;
-    max-width: 300px;
-    z-index: 999;
-}
-
-.tips-content.hide { display: none; }
-
 .control-bar {
     display: flex;
     gap: 10px;
@@ -175,7 +186,6 @@
     flex-wrap: wrap;
     justify-content: center;
 }
-
 .ctrl-btn {
     padding: 10px 18px;
     border-radius: 8px;
@@ -183,8 +193,39 @@
     color: white;
     cursor: pointer;
     border: 1px solid #5a2e0a;
+    transition: 0.2s ease;
 }
-
+.ctrl-btn:hover { background: #9c5221; }
 .ctrl-btn.resign { background: #cd5c5c; }
+.ctrl-btn.resign:hover { background: #e06666; }
 .file-ctrl-btn { background: #2e8b57; }
+.file-ctrl-btn:hover { background: #38a169; }
 .file-input { display: none; }
+.tips-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.95);
+    border: 2px solid #8b4513;
+    border-radius: 8px;
+    padding: 15px;
+    max-width: 300px;
+    z-index: 999;
+}
+.tips-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.tips-title { font-size: 18px; font-weight: bold; color: #8b4513; }
+.tips-toggle {
+    padding: 4px 8px;
+    background: #8b4513;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.tips-content { line-height: 1.6; color: #3a2411; }
+.tips-content.hide { display: none; }
